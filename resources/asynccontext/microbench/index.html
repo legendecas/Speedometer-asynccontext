@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+<button id="start">start</button>
+</body>
+<script>
+    const start = document.getElementById('start');
+    start.addEventListener('click', () => {
+        let fulfilledPromise = Promise.resolve(42);
+        for (let i = 0; i < 1000; i++) {
+            fulfilledPromise.then(() => { });
+        }
+        let rejectedPromise = Promise.reject(new Error());
+        for (let i = 0; i < 1000; i++) {
+            rejectedPromise.catch(() => { });
+        }
+
+        Promise.resolve()
+            .then(() => {
+                const node = document.createElement('div');
+                node.id = 'result';
+                node.innerText = 'done';
+                document.body.appendChild(node);
+            });
+    });
+</script>
+
+</html>

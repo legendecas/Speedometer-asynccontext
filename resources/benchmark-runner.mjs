@@ -263,9 +263,9 @@ const WarmupSuite = {
 };
 
 class TestInvoker {
-    constructor(syncCallback, asyncCallback, reportCallback) {
-        this._syncCallback = syncCallback;
-        this._asyncCallback = asyncCallback;
+    constructor(testCallback, measureCallback, reportCallback) {
+        this._testCallback = testCallback;
+        this._measureCallback = measureCallback;
         this._reportCallback = reportCallback;
     }
 }
@@ -274,14 +274,14 @@ class TimerTestInvoker extends TestInvoker {
     start() {
         return new Promise((resolve) => {
             setTimeout(() => {
-                this._syncCallback();
-                setTimeout(() => {
-                    this._asyncCallback();
-                    requestAnimationFrame(async () => {
-                        await this._reportCallback();
-                        resolve();
+                Promise.resolve(this._testCallback())
+                    .then(() => {
+                        this._measureCallback();
+                        requestAnimationFrame(async () => {
+                            await this._reportCallback();
+                            resolve();
+                        });
                     });
-                }, 0);
             }, params.waitBeforeSync);
         });
     }
@@ -298,15 +298,15 @@ class RAFTestInvoker extends TestInvoker {
     }
 
     _scheduleCallbacks(resolve) {
-        requestAnimationFrame(() => this._syncCallback());
         requestAnimationFrame(() => {
-            setTimeout(() => {
-                this._asyncCallback();
-                setTimeout(async () => {
-                    await this._reportCallback();
-                    resolve();
-                }, 0);
-            }, 0);
+            Promise.resolve(this._testCallback())
+                .then(() => {
+                    this._measureCallback();
+                    setTimeout(async () => {
+                        await this._reportCallback();
+                        resolve();
+                    }, 0);
+                })
         });
     }
 }
@@ -466,7 +466,7 @@ export class BenchmarkRunner {
         let syncTime;
         let asyncStartTime;
         let asyncTime;
-        const runSync = () => {
+        const testCallback = async () => {
             if (params.warmupBeforeSync) {
                 performance.mark("warmup-start");
                 const startTime = performance.now();
@@ -477,7 +477,7 @@ export class BenchmarkRunner {
             }
             performance.mark(startLabel);
             const syncStartTime = performance.now();
-            test.run(this._page);
+            await test.run(this._page);
             const syncEndTime = performance.now();
             performance.mark(syncEndLabel);
 
@@ -486,7 +486,7 @@ export class BenchmarkRunner {
             performance.mark(asyncStartLabel);
             asyncStartTime = performance.now();
         };
-        const measureAsync = () => {
+        const measureCallback = () => {
             // Some browsers don't immediately update the layout for paint.
             // Force the layout here to ensure we're measuring the layout time.
             const height = this._frame.contentDocument.body.getBoundingClientRect().height;
@@ -501,7 +501,7 @@ export class BenchmarkRunner {
         };
         const report = () => this._recordTestResults(suite, test, syncTime, asyncTime);
         const invokerClass = params.measurementMethod === "raf" ? RAFTestInvoker : TimerTestInvoker;
-        const invoker = new invokerClass(runSync, measureAsync, report);
+        const invoker = new invokerClass(testCallback, measureCallback, report);
 
         return invoker.start();
     }
