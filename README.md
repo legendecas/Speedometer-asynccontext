@@ -1,5 +1,9 @@
-| :warning: **Speedometer 3 is in active development and is unstable**. You can follow along with development in this repository, but see [Speedometer 2.1](https://browserbench.org/Speedometer2.1/) for the latest stable version. |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+# Speedometer for AsyncContext
+
+Speedometer benchmark with a focus on the impact of AsyncContext on the
+responsiveness of a web application.
+
+This is a derived version of [Webkit/Speedometer](https://github.com/WebKit/Speedometer).
 
 # What is Speedometer?
 
