@@ -57,6 +57,22 @@ Suites.enable = function (names, tags) {
 };
 
 Suites.push({
+    name: "AsyncContext-microtbench",
+    url: "asynccontext/microbench/index.html",
+    tags: ["asynccontext"],
+    async prepare(page) {
+        (await page.waitForElement("#start")).focus();
+    },
+    tests: [
+        new BenchmarkTestStep(`Run`, async (page) => {
+            const button = page.querySelector("#start");
+            button.click();
+            await page.waitForElement("#result");
+        }),
+    ],
+});
+
+Suites.push({
     name: "TodoMVC-JavaScript-ES5",
     url: "todomvc/vanilla-examples/javascript-es5/dist/index.html",
     tags: ["todomvc"],
@@ -88,17 +104,61 @@ Suites.push({
 });
 
 Suites.push({
-    name: "AsyncContext-microtbench",
-    url: "asynccontext/microbench/index.html",
-    tags: ["asynccontext"],
+    name: "TodoMVC-Angular",
+    url: "todomvc/architecture-examples/angular/dist/index.html",
+    tags: ["todomvc"],
     async prepare(page) {
-        (await page.waitForElement("#start")).focus();
+        const element = await page.waitForElement(".new-todo");
+        element.focus();
     },
     tests: [
-        new BenchmarkTestStep(`Run`, async (page) => {
-            const button = page.querySelector("#start");
-            button.click();
-            await page.waitForElement("#result");
+        new BenchmarkTestStep(`Adding${numberOfItemsToAdd}Items`, (page) => {
+            const newTodo = page.querySelector(".new-todo");
+            for (let i = 0; i < numberOfItemsToAdd; i++) {
+                newTodo.setValue(getTodoText(defaultLanguage, i));
+                newTodo.dispatchEvent("input");
+                newTodo.enter("keyup");
+            }
+        }),
+        new BenchmarkTestStep("CompletingAllItems", (page) => {
+            const checkboxes = page.querySelectorAll(".toggle");
+            for (let i = 0; i < numberOfItemsToAdd; i++)
+                checkboxes[i].click();
+        }),
+        new BenchmarkTestStep("DeletingAllItems", (page) => {
+            const deleteButtons = page.querySelectorAll(".destroy");
+            for (let i = numberOfItemsToAdd - 1; i >= 0; i--)
+                deleteButtons[i].click();
+        }),
+    ],
+});
+
+Suites.push({
+    name: "TodoMVC-React",
+    url: "todomvc/architecture-examples/react/dist/index.html#/home",
+    tags: ["todomvc"],
+    async prepare(page) {
+        const element = await page.waitForElement(".new-todo");
+        element.focus();
+    },
+    tests: [
+        new BenchmarkTestStep(`Adding${numberOfItemsToAdd}Items`, (page) => {
+            const newTodo = page.querySelector(".new-todo");
+            for (let i = 0; i < numberOfItemsToAdd; i++) {
+                newTodo.setValue(getTodoText(defaultLanguage, i));
+                newTodo.dispatchEvent("input");
+                newTodo.enter("keydown");
+            }
+        }),
+        new BenchmarkTestStep("CompletingAllItems", (page) => {
+            const checkboxes = page.querySelectorAll(".toggle");
+            for (let i = 0; i < numberOfItemsToAdd; i++)
+                checkboxes[i].click();
+        }),
+        new BenchmarkTestStep("DeletingAllItems", (page) => {
+            const deleteButtons = page.querySelectorAll(".destroy");
+            for (let i = numberOfItemsToAdd - 1; i >= 0; i--)
+                deleteButtons[i].click();
         }),
     ],
 });
